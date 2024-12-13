@@ -5,10 +5,6 @@
 # Tubes2AI
 Tugas Besar 2 AI - Implementasi Algoritma Pembelajaran Mesin
 
-# Tubes2AI
-
-This project demonstrates how to set up and manage a Python virtual environment (`.venv`) for a project, as well as how to use a `requirements.txt` file for dependency management.
-
 ---
 
 ## **Folder Structure**
