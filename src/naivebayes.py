@@ -1,86 +1,166 @@
 import numpy as np
-from collections import Counter
+import pandas as pd
 
-def fit_naive_bayes(X, y):
-    """
-    Fits the Naive Bayes model to the training data.
+class NaiveBayes:
+    def __init__(self):
+        self.class_probs = None
+        self.feature_probs = None
+        self.classes = None
+        self.means = None
+        self.stds = None
 
-    Parameters:
-    X (numpy.ndarray): The feature matrix of shape (n_samples, n_features).
-    y (numpy.ndarray): The target vector of shape (n_samples,).
+    def fit(self, X, y):
+        """ Fit the model using the training data """
+        self.classes = np.unique(y)
+        class_counts = np.array([np.sum(y == c) for c in self.classes])
+        self.class_probs = class_counts / len(y)
 
-    Returns:
-    tuple: A tuple containing class_priors, feature_likelihoods, and classes.
-    """
-    classes, class_counts = np.unique(y, return_counts=True)
-    class_priors = class_counts / len(y)
+        """ Fit the Gaussian Naive Bayes model """
+        means = []
+        stds = []
+        for c in self.classes:
+            X_class = X[y == c]
+            means.append(X_class.mean(axis=0))
+            stds.append(X_class.std(axis=0))
+        self.means = np.array(means)
+        self.stds = np.array(stds)
+        
+        return self
 
-    # Calculate feature likelihoods P(feature | class)
-    feature_likelihoods = {}
-    for cls in classes:
-        cls_indices = np.where(y == cls)[0]
-        cls_features = X[cls_indices]
-        feature_probs = []
-        for feature_col in cls_features.T:
-            values, counts = np.unique(feature_col, return_counts=True)
-            probs = {val: count / len(feature_col) for val, count in zip(values, counts)}
-            feature_probs.append(probs)
-        feature_likelihoods[cls] = feature_probs
+    def predict(self, X):
+        """ Predict the class labels for the input data """
+        y_pred = [self._predict_single(x) for x in X]
+        return np.array(y_pred)
 
-    return class_priors, feature_likelihoods, classes
+    def _predict_single(self, x):
+        """ Predict the class label for a single data point """
+        log_probs = np.log(self.class_probs)
+        for i, c in enumerate(self.classes):
+            mean = self.means[i]
+            std = self.stds[i]
+            log_likelihood = -0.5 * np.sum(np.log(2 * np.pi * std ** 2) + ((x - mean) ** 2) / (std ** 2))
+            log_probs[i] += log_likelihood
+        
+        return self.classes[np.argmax(log_probs)]
 
-def predict_proba_naive_bayes(X, class_priors, feature_likelihoods, classes):
-    """
-    Predicts the class probabilities for the given input data.
+    def predict_proba(self, X):
+        """ Predict the class probabilities for the input data """
+        probas = [self._predict_proba_single(x) for x in X]
+        return np.array(probas)
 
-    Parameters:
-    X (numpy.ndarray): The feature matrix of shape (n_samples, n_features).
-    class_priors (numpy.ndarray): Prior probabilities of each class.
-    feature_likelihoods (dict): Likelihoods of features given a class.
-    classes (numpy.ndarray): Unique classes.
+    def _predict_proba_single(self, x):
+        """ Predict the class probabilities for a single data point """
+        log_probs = np.log(self.class_probs)
+        likelihoods = np.zeros(len(self.classes))
 
-    Returns:
-    numpy.ndarray: Predicted probabilities of shape (n_samples, n_classes).
-    """
-    probs = []
-    for sample in X:
-        class_probs = []
-        for cls_idx, cls in enumerate(classes):
-            prob = class_priors[cls_idx]
-            for feature_idx, feature_value in enumerate(sample):
-                feature_probs = feature_likelihoods[cls][feature_idx]
-                prob *= feature_probs.get(feature_value, 1e-6)  # Avoid zero probability
-            class_probs.append(prob)
-        probs.append(class_probs)
-    return np.array(probs)
+        for i, c in enumerate(self.classes):
+            mean = self.means[i]
+            std = self.stds[i]
+            log_likelihood = -0.5 * np.sum(np.log(2 * np.pi * std ** 2) + ((x - mean) ** 2) / (std ** 2))
+            log_probs[i] += log_likelihood
+            likelihoods[i] = np.exp(log_probs[i])  # Convert log probs to normal probabilities
+        
+        total_likelihood = np.sum(likelihoods)
+        return likelihoods / total_likelihood  # Normalize to get probabilities
 
-def predict_naive_bayes(X, class_priors, feature_likelihoods, classes):
-    """
-    Predicts the class labels for the given input data.
+    def evaluate(self, X, y, verbose=True):
+        """ Evaluate the model on the test data """
+        y_pred = self.predict(X)
+        accuracy = np.mean(y_pred == y)
+        
+        if verbose:
+            print(f"Accuracy: {accuracy:.4f}")
+            
+            print("\nClassification Report:")
+            print(self.compute_classification_report(y, y_pred))
 
-    Parameters:
-    X (numpy.ndarray): The feature matrix of shape (n_samples, n_features).
-    class_priors (numpy.ndarray): Prior probabilities of each class.
-    feature_likelihoods (dict): Likelihoods of features given a class.
-    classes (numpy.ndarray): Unique classes.
+        return accuracy
 
-    Returns:
-    numpy.ndarray: Predicted class labels of shape (n_samples,).
-    """
-    probs = predict_proba_naive_bayes(X, class_priors, feature_likelihoods, classes)
-    return classes[np.argmax(probs, axis=1)]
+    def _confusion_matrix(self, y_true, y_pred):
+        """ Generate a confusion matrix """
+        confusion = pd.crosstab(y_true, y_pred, rownames=['True'], colnames=['Predicted'])
+        return confusion
+    
+    # def _classification_report(self, y_true, y_pred):
+    #     """ Generate a classification report """
+    #     report = {}
+    #     classes = np.unique(y_true)
+    #     for c in classes:
+    #         tp = np.sum((y_pred == c) & (y_true == c))
+    #         fp = np.sum((y_pred == c) & (y_true != c))
+    #         fn = np.sum((y_pred != c) & (y_true == c))
+    #         tn = np.sum((y_pred != c) & (y_true != c))
+            
+    #         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    #         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    #         f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    #         support = np.sum(y_true == c)
+            
+    #         report[c] = {'precision': precision, 'recall': recall, 'f1-score': f1, 'support': support}
+        
+    #     return pd.DataFrame(report).T
 
-# Unit Testing Example
-X = np.array([[1, 1], [1, 0], [0, 1], [0, 0]])
-y = np.array([1, 1, 0, 0])
+    def compute_classification_report(self, y_true, y_pred):
+        # Get unique classes from the ground truth
+        classes = np.unique(y_true)
+        target_names = [str(cls) for cls in classes]  # Convert class labels to strings if necessary
+        metrics = []
+        
+        for cls in classes:
+            # True Positives, False Positives, False Negatives
+            TP = np.sum((y_pred == cls) & (y_true == cls))
+            FP = np.sum((y_pred == cls) & (y_true != cls))
+            FN = np.sum((y_pred != cls) & (y_true == cls))
+            support = np.sum(y_true == cls)
+            
+            # Precision, Recall, F1-Score
+            precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+            recall = TP / (TP + FN) if (TP + FN) > 0 else 0
+            f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+            
+            # Store metrics
+            metrics.append([precision, recall, f1_score, support])
+        
+        # Convert to DataFrame for better display
+        metrics_df = pd.DataFrame(
+            metrics,
+            columns=["Precision", "Recall", "F1-Score", "Support"],
+            index=target_names
+        )
+        
+        # Calculate averages
+        accuracy = np.sum(y_true == y_pred) / len(y_true)
+        macro_avg = metrics_df[["Precision", "Recall", "F1-Score"]].mean().tolist()
+        weighted_avg = (
+            (metrics_df[["Precision", "Recall", "F1-Score"]].T * metrics_df["Support"]).sum(axis=1) /
+            metrics_df["Support"].sum()
+        )
 
-# Fit the model
-class_priors, feature_likelihoods, classes = fit_naive_bayes(X, y)
+        metrics_df.loc[" "] = [" ", " ", " ", " "]
+        
+        # Add averages to DataFrame
+        metrics_df.loc["Accuracy"] = [" ", " ", accuracy, len(y_true)]
+        metrics_df.loc["Macro Avg"] = macro_avg + [len(y_true)]
+        metrics_df.loc["Weighted Avg"] = weighted_avg.tolist() + [len(y_true)]
+        
+        return metrics_df
 
-# Predictions
-predictions = predict_naive_bayes(X, class_priors, feature_likelihoods, classes)
-print("Predictions:", predictions)
+# Example Usage:
 
-# Predicted probabilities
-predicted_probs = predict_proba_naive_bayes(X, class_priors, feature_likelihoods, classes)
-print("Predicted Probabilities:\n", predicted_probs)
+# Simulated Example (using random data for simplicity)
+np.random.seed(42)
+X = np.random.randn(100, 4)  # 100 samples, 4 features
+y = np.random.choice([0, 1], size=100)  # Binary target (0 or 1)
+
+# Train-test split
+train_size = 0.7
+split = int(len(X) * train_size)
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
+
+# Initialize and train the Naive Bayes model
+model = NaiveBayes()
+model.fit(X_train, y_train)
+
+# Evaluate the model
+accuracy = model.evaluate(X_test, y_test)
