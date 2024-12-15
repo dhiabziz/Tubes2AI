@@ -1,10 +1,8 @@
-import time
 import numpy as np
 import pandas as pd
-from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import classification_report
+from sklearn.base import BaseEstimator, ClassifierMixin
 
-class ScratchNaiveBayes:
+class ScratchNaiveBayes(BaseEstimator, ClassifierMixin):
     def __init__(self):
         self.class_probs = None
         self.feature_probs = None
@@ -70,78 +68,85 @@ class ScratchNaiveBayes:
 
     def score(self, X, y, verbose=True):
         """ Evaluate the model on the test data """
-        accuracy = np.mean(self.predict(X) == y)
+        y_pred = self.predict(X)
+        accuracy = np.mean(y_pred == y)
+        
+        if verbose:
+            print(f"Accuracy: {accuracy:.4f}")
+            
+            print("\nClassification Report:")
+            print(self.compute_classification_report(y, y_pred))
 
         return accuracy
 
-    # def _confusion_matrix(self, y_true, y_pred):
-    #     """ Generate a confusion matrix """
-    #     confusion = pd.crosstab(y_true, y_pred, rownames=['True'], colnames=['Predicted'])
-    #     return confusion
+    def _confusion_matrix(self, y_true, y_pred):
+        """ Generate a confusion matrix """
+        confusion = pd.crosstab(y_true, y_pred, rownames=['True'], colnames=['Predicted'])
+        return confusion
     
-    # def _classification_report(self, y_true, y_pred):
-    #     """ Generate a classification report """
-    #     report = {}
-    #     classes = np.unique(y_true)
-    #     for c in classes:
-    #         tp = np.sum((y_pred == c) & (y_true == c))
-    #         fp = np.sum((y_pred == c) & (y_true != c))
-    #         fn = np.sum((y_pred != c) & (y_true == c))
-    #         tn = np.sum((y_pred != c) & (y_true != c))
+    def _classification_report(self, y_true, y_pred):
+        """ Generate a classification report """
+        report = {}
+        classes = np.unique(y_true)
+        for c in classes:
+            tp = np.sum((y_pred == c) & (y_true == c))
+            fp = np.sum((y_pred == c) & (y_true != c))
+            fn = np.sum((y_pred != c) & (y_true == c))
+            tn = np.sum((y_pred != c) & (y_true != c))
             
-    #         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    #         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    #         f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-    #         support = np.sum(y_true == c)
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+            support = np.sum(y_true == c)
             
-    #         report[c] = {'precision': precision, 'recall': recall, 'f1-score': f1, 'support': support}
+            report[c] = {'precision': precision, 'recall': recall, 'f1-score': f1, 'support': support}
         
-    #     return pd.DataFrame(report).T
+        return pd.DataFrame(report).T
 
-    # def compute_classification_report(self, y_true, y_pred):
-    #     # Get unique classes from the ground truth
-    #     classes = np.unique(y_true)
-    #     target_names = [str(cls) for cls in classes]  # Convert class labels to strings if necessary
-    #     metrics = []
+    def compute_classification_report(self, y_true, y_pred):
+        # Get unique classes from the ground truth
+        classes = np.unique(y_true)
+        target_names = [str(cls) for cls in classes]  # Convert class labels to strings if necessary
+        metrics = []
         
-    #     for cls in classes:
-    #         # True Positives, False Positives, False Negatives
-    #         TP = np.sum((y_pred == cls) & (y_true == cls))
-    #         FP = np.sum((y_pred == cls) & (y_true != cls))
-    #         FN = np.sum((y_pred != cls) & (y_true == cls))
-    #         support = np.sum(y_true == cls)
+        for cls in classes:
+            # True Positives, False Positives, False Negatives
+            TP = np.sum((y_pred == cls) & (y_true == cls))
+            FP = np.sum((y_pred == cls) & (y_true != cls))
+            FN = np.sum((y_pred != cls) & (y_true == cls))
+            support = np.sum(y_true == cls)
             
-    #         # Precision, Recall, F1-Score
-    #         precision = TP / (TP + FP) if (TP + FP) > 0 else 0
-    #         recall = TP / (TP + FN) if (TP + FN) > 0 else 0
-    #         f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+            # Precision, Recall, F1-Score
+            precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+            recall = TP / (TP + FN) if (TP + FN) > 0 else 0
+            f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
             
-    #         # Store metrics
-    #         metrics.append([precision, recall, f1_score, support])
+            # Store metrics
+            metrics.append([precision, recall, f1_score, support])
         
-    #     # Convert to DataFrame for better display
-    #     metrics_df = pd.DataFrame(
-    #         metrics,
-    #         columns=["Precision", "Recall", "F1-Score", "Support"],
-    #         index=target_names
-    #     )
+        # Convert to DataFrame for better display
+        metrics_df = pd.DataFrame(
+            metrics,
+            columns=["Precision", "Recall", "F1-Score", "Support"],
+            index=target_names
+        )
         
-    #     # Calculate averages
-    #     accuracy = np.sum(y_true == y_pred) / len(y_true)
-    #     macro_avg = metrics_df[["Precision", "Recall", "F1-Score"]].mean().tolist()
-    #     weighted_avg = (
-    #         (metrics_df[["Precision", "Recall", "F1-Score"]].T * metrics_df["Support"]).sum(axis=1) /
-    #         metrics_df["Support"].sum()
-    #     )
+        # Calculate averages
+        accuracy = np.sum(y_true == y_pred) / len(y_true)
+        macro_avg = metrics_df[["Precision", "Recall", "F1-Score"]].mean().tolist()
+        weighted_avg = (
+            (metrics_df[["Precision", "Recall", "F1-Score"]].T * metrics_df["Support"]).sum(axis=1) /
+            metrics_df["Support"].sum()
+        )
 
-    #     metrics_df.loc[" "] = [" ", " ", " ", " "]
+        metrics_df.loc[" "] = [" ", " ", " ", " "]
         
-    #     # Add averages to DataFrame
-    #     metrics_df.loc["Accuracy"] = [" ", " ", accuracy, len(y_true)]
-    #     metrics_df.loc["Macro Avg"] = macro_avg + [len(y_true)]
-    #     metrics_df.loc["Weighted Avg"] = weighted_avg.tolist() + [len(y_true)]
+        # Add averages to DataFrame
+        metrics_df.loc["Accuracy"] = [" ", " ", accuracy, len(y_true)]
+        metrics_df.loc["Macro Avg"] = macro_avg + [len(y_true)]
+        metrics_df.loc["Weighted Avg"] = weighted_avg.tolist() + [len(y_true)]
         
-    #     return metrics_df
+        return metrics_df
 
 # Example Usage:
 
