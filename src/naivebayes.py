@@ -145,38 +145,38 @@ class ScratchNaiveBayes:
 
 # Example Usage:
 
-# Simulated Example (using random data for simplicity)
-start = time.time()
-np.random.seed(42)
-X = np.random.randn(150000, 50)  # 100 samples, 4 features
-y = np.random.choice([0, 1], size=150000)  # Binary target (0 or 1)
+# # Simulated Example (using random data for simplicity)
+# start = time.time()
+# np.random.seed(42)
+# X = np.random.randn(150000, 50)  # 100 samples, 4 features
+# y = np.random.choice([0, 1], size=150000)  # Binary target (0 or 1)
 
-# Train-test split
-train_size = 0.7
-split = int(len(X) * train_size)
-X_train, X_test = X[:split], X[split:]
-y_train, y_test = y[:split], y[split:]
+# # Train-test split
+# train_size = 0.7
+# split = int(len(X) * train_size)
+# X_train, X_test = X[:split], X[split:]
+# y_train, y_test = y[:split], y[split:]
 
-# Custom Naive Bayes
-print("Custom Naive Bayes:")
-custom_model = ScratchNaiveBayes()
-custom_model.fit(X_train, y_train)
-custom_y_pred = custom_model.predict(X_test)
-custom_accuracy = custom_model.score(X_test, y_test)
+# # Custom Naive Bayes
+# print("Custom Naive Bayes:")
+# custom_model = ScratchNaiveBayes()
+# custom_model.fit(X_train, y_train)
+# custom_y_pred = custom_model.predict(X_test)
+# custom_accuracy = custom_model.score(X_test, y_test)
 
-print(f'Accuracy: {custom_accuracy:.4f}')
-print("\nClassification Report:")
-print(classification_report(y_test, custom_y_pred))
+# print(f'Accuracy: {custom_accuracy:.4f}')
+# print("\nClassification Report:")
+# print(classification_report(y_test, custom_y_pred))
 
-# Scikit-learn Naive Bayes
-print("\nScikit-learn Naive Bayes:")
-sklearn_model = GaussianNB()
-sklearn_model.fit(X_train, y_train)
-sklearn_y_pred = sklearn_model.predict(X_test)
-sklearn_accuracy = sklearn_model.score(X_test, y_test)
+# # Scikit-learn Naive Bayes
+# print("\nScikit-learn Naive Bayes:")
+# sklearn_model = GaussianNB()
+# sklearn_model.fit(X_train, y_train)
+# sklearn_y_pred = sklearn_model.predict(X_test)
+# sklearn_accuracy = sklearn_model.score(X_test, y_test)
 
-print(f"Accuracy: {sklearn_accuracy:.4f}")
-print("\nClassification Report:")
-print(classification_report(y_test, sklearn_y_pred))
-end = time.time()
-print(f"Time Taken: {end - start:.6f} seconds")
+# print(f"Accuracy: {sklearn_accuracy:.4f}")
+# print("\nClassification Report:")
+# print(classification_report(y_test, sklearn_y_pred))
+# end = time.time()
+# print(f"Time Taken: {end - start:.6f} seconds")
