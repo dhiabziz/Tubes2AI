@@ -182,22 +182,23 @@ class KNN {
 // }
 
 int main(int argc, char* argv[]) {
-    if (argc != 4) {
+    if (argc != 5) {
         cerr << "Usage: " << argv[0] << " <k> <preprocessing_result> <file_test>" << endl;
         return 1;
     }
 
     int k(stoi(argv[1]));
-    ifstream inputFile1(argv[2]);
-    ifstream inputFile2(argv[3]);
+    string metrik(argv[2]);
+    ifstream inputFile1(argv[3]);
+    ifstream inputFile2(argv[4]);
 
     if (!inputFile1) {
-        cerr << "Could not open the file: " << argv[2] << endl;
+        cerr << "Could not open the file: " << argv[3] << endl;
         return 1;
     }
 
     if (!inputFile2) {
-        cerr << "Could not open the file: " << argv[3] << endl;
+        cerr << "Could not open the file: " << argv[4] << endl;
         return 1;
     }
 
@@ -262,7 +263,7 @@ int main(int argc, char* argv[]) {
         cout << endl;
         
         try {
-            int predicted_class = knn.predict(test_features, "euclidean");
+            int predicted_class = knn.predict(test_features, metrik);
             cout << "Predicted class: " << predicted_class << endl;
         } catch (const invalid_argument& e) {
             cerr << e.what() << endl;
