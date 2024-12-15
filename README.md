@@ -1,9 +1,6 @@
-# BACA INI DULU BUAT DEVELOPER
-## SEBELUM NGE PUSH, PASTIIN CLEAR ALL OUTPUTS DULU (BIAR RAPI, GA GAMPANG KONFLIK, JADI JANGAN PERNAH NGE PUSH OUTPUT)
-## BIKIN BRANCH DENGAN NAMA BRANCH IALAH FITUR YANG DIKERJAKAN (EX: preprocess, )
-
 # Tubes2AI
 Tugas Besar 2 AI - Implementasi Algoritma Pembelajaran Mesin
+Tugas Besar 2 pada kuliah IF3170 Inteligensi Buatan untuk memberikan pengalaman langsung kepada peserta kuliah dalam menerapkan algoritma pembelajaran mesin pada permasalahan nyata. Pada tubes ini kami di minta untuk memprediksi feature "attack_cat" pada dataset UNSW-NB15 menggunakan model KNN, Naive Bayes, dan ID3.
 
 ---
 
@@ -80,3 +77,6 @@ This will return you to the global Python environment.
 ## **Notes**
 - Always activate the `.venv` before running your Python scripts to ensure the correct dependencies are used.
 - Use `requirements.txt` to maintain consistency across environments.
+
+## **Job Distribution**
+*Attached in docs folder
