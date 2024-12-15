@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+
 using namespace std;
 
 template <typename T>
@@ -153,29 +154,121 @@ class KNN {
         }
 };
 
-int main() {
-    vector<Data<int>> training_data = {
-        Data<int>(0, {1.0, 2.0}),
-        Data<int>(1, {2.0, 3.0}),
-        Data<int>(0, {3.0, 4.0}),
-        Data<int>(1, {2.0, 3.0})
-    };
+// int main() {
+//     vector<Data<int>> training_data = {
+//         Data<int>(0, {1.0, 2.0}),
+//         Data<int>(1, {2.0, 3.0}),
+//         Data<int>(0, {3.0, 4.0}),
+//         Data<int>(1, {2.0, 3.0})
+//     };
 
-    KNN<int> knn(3);
-    knn.fit(training_data);
+//     KNN<int> knn(3);
+//     knn.fit(training_data);
 
-    vector<double> test_features = {2.0, 3.0};
-    int predicted_class = knn.predict(test_features, "euclidean");
+//     vector<double> test_features = {2.0, 3.0};
+//     int predicted_class = knn.predict(test_features, "euclidean");
 
-    cout << "Predicted class: " << predicted_class << endl;
+//     cout << "Predicted class: " << predicted_class << endl;
 
-    auto probabilities = knn.predict_proba(test_features, "euclidean");
-    cout << "Probabilities:" << endl;
-    for (const auto& pair : probabilities) {
-        cout << "Class " << pair.first << ": " << pair.second << endl;
+//     auto probabilities = knn.predict_proba(test_features, "euclidean");
+//     cout << "Probabilities:" << endl;
+//     for (const auto& pair : probabilities) {
+//         cout << "Class " << pair.first << ": " << pair.second << endl;
+//     }
+
+//     knn.display_data();
+
+//     return 0;
+// }
+
+int main(int argc, char* argv[]) {
+    if (argc != 4) {
+        cerr << "Usage: " << argv[0] << " <k> <preprocessing_result> <file_test>" << endl;
+        return 1;
     }
 
-    knn.display_data();
+    int k(stoi(argv[1]));
+    ifstream inputFile1(argv[2]);
+    ifstream inputFile2(argv[3]);
+
+    if (!inputFile1) {
+        cerr << "Could not open the file: " << argv[2] << endl;
+        return 1;
+    }
+
+    if (!inputFile2) {
+        cerr << "Could not open the file: " << argv[3] << endl;
+        return 1;
+    }
+
+    vector<Data<int>> train_data;
+    vector<vector<double>> test_data;
+    string line;
+
+    // string header;
+    // getline(inputFile1, header); // Skip header
+    // Membaca train data
+    while (getline(inputFile1, line)) {
+
+        stringstream ss(line);
+        vector<double> features;
+        int target;
+        double value;
+
+        // Memproses fitur
+        while (ss >> value) {
+            features.push_back(value);
+            if (ss.peek() == ',') ss.ignore();
+        }
+
+        // Target adalah elemen terakhir
+        if (!features.empty()) {
+            target = static_cast<int>(features.back());
+            features.pop_back();
+            train_data.emplace_back(target, features);
+        }
+    }
+
+    // Membaca test data
+    // getline(inputFile2, header); // Skip header
+    while (getline(inputFile2, line)) {
+        
+        stringstream ss(line);
+        vector<double> features;
+        double value;
+
+        // Memproses fitur
+        while (ss >> value) {
+            features.push_back(value);
+            if (ss.peek() == ',') ss.ignore();
+        }
+
+        test_data.push_back(features);
+    }
+
+    inputFile1.close();
+    inputFile2.close();
+
+    KNN<int> knn(k);
+
+    knn.fit(train_data);
+
+    cout << "Predictions:" << endl;
+    for (const auto& test_features : test_data) {
+        for (auto &&i : test_features)
+        {
+            cout << i << " ";
+        }
+        cout << endl;
+        
+        try {
+            int predicted_class = knn.predict(test_features, "euclidean");
+            cout << "Predicted class: " << predicted_class << endl;
+        } catch (const invalid_argument& e) {
+            cerr << e.what() << endl;
+        }
+    }
+
 
     return 0;
 }
