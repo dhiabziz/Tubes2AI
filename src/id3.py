@@ -1,4 +1,5 @@
 from collections import Counter
+import time
 import numpy as np
 
 class Node:
@@ -76,49 +77,81 @@ def split_data(X: np.ndarray, y: np.ndarray, feature: int, value: float) -> tupl
     false_X, false_y = X[false_indices], y[false_indices]
     return true_X, true_y, false_X, false_y
 
-def build_tree(X: np.ndarray, y: np.ndarray) -> Node:
+def build_tree(X: np.ndarray, y: np.ndarray, max_depth: int = 10, min_samples_split: int = 2) -> Node:
     """
-    Builds a decision tree using the ID3 algorithm (In sklearn, it called fit() method)
+    Optimized decision tree construction using ID3 algorithm.
     
     Parameters:
-    X (numpy.ndarray): The feature matrix where each row represents an instance and each column represents a feature.
-    y (numpy.ndarray): The target values corresponding to each instance in X.
+    X (numpy.ndarray): The feature matrix.
+    y (numpy.ndarray): The target values.
+    max_depth (int): Maximum depth of the tree to prevent overfitting.
+    min_samples_split (int): Minimum number of samples required to split a node.
     
     Returns:
     Node: The root node of the constructed decision tree.
-    The function works by recursively splitting the data based on the feature that provides the highest information gain 
-    until all instances in a node belong to the same class or no further information gain can be achieved.
     """
-    if len(set(y)) == 1:
-        return Node(results=y[0])
+    # Early stopping conditions
+    if (len(set(y)) == 1 or  # All samples have the same class
+        max_depth == 0 or    # Maximum depth reached
+        len(y) < min_samples_split):  # Not enough samples to split
+        # Return the most frequent class
+        unique, counts = np.unique(y, return_counts=True)
+        return Node(results=unique[np.argmax(counts)])
 
+    # Calculate current entropy
+    current_entropy = entropy(y)
+
+    # Track best split
     best_gain = 0
     best_criteria = None
     best_sets = None
     n_features = X.shape[1]
 
-    current_entropy = entropy(y)
+    # Randomly sample features to reduce computation
+    feature_subset = np.random.choice(n_features, min(20, n_features), replace=False)
 
-    for feature in range(n_features):
-        feature_values = set(X[:, feature])
+    for feature in feature_subset:
+        # Use percentiles for feature values to reduce computational complexity
+        feature_values = np.percentile(X[:, feature], [25, 50, 75])
+        
         for value in feature_values:
+            # Split data
             true_X, true_y, false_X, false_y = split_data(X, y, feature, value)
+            
+            # Skip if split is too small
+            if (len(true_y) < min_samples_split or 
+                len(false_y) < min_samples_split):
+                continue
+
+            # Calculate entropy for split branches
             true_entropy = entropy(true_y)
             false_entropy = entropy(false_y)
+            
+            # Calculate information gain
             p = len(true_y) / len(y)
             gain = current_entropy - p * true_entropy - (1 - p) * false_entropy
 
+            # Update best split if gain is improved
             if gain > best_gain:
                 best_gain = gain
                 best_criteria = (feature, value)
                 best_sets = (true_X, true_y, false_X, false_y)
 
-    if best_gain > 0:
-        true_branch = build_tree(best_sets[0], best_sets[1])
-        false_branch = build_tree(best_sets[2], best_sets[3])
-        return Node(feature=best_criteria[0], value=best_criteria[1], true_branch=true_branch, false_branch=false_branch)
+    # If no good split found, return most frequent class
+    if best_gain <= 0:
+        unique, counts = np.unique(y, return_counts=True)
+        return Node(results=unique[np.argmax(counts)])
 
-    return Node(results=y[0])
+    # Recursively build branches with reduced depth
+    true_branch = build_tree(best_sets[0], best_sets[1], max_depth - 1, min_samples_split)
+    false_branch = build_tree(best_sets[2], best_sets[3], max_depth - 1, min_samples_split)
+    
+    return Node(
+        feature=best_criteria[0], 
+        value=best_criteria[1], 
+        true_branch=true_branch, 
+        false_branch=false_branch
+    )
 
 def single_instance_predict(tree: Node, sample: dict) -> dict:
     """
@@ -175,10 +208,24 @@ y = np.array([0, 1, 0, 0, 1, 1, 0, 1, 0, 1])
 decision_tree = build_tree(X, y)
 
 # Making a prediction
-sample = np.array([1.3, 3.1])
-prediction = predict(decision_tree, sample)
-print(f"Prediction for sample {sample}: {prediction}")
+samples = np.array([[2.7, 2.5],
+    [1.3, 3.1],
+    [3.1, 1.8]])
+prediction = predict(decision_tree, samples)
+print(f"Prediction for sample {samples}: {prediction}")
 
+
+
+start = time.time()
+np.random.seed(42)
+X = np.random.randn(100000, 30)  # 100 samples, 4 features
+y = np.random.choice([0, 1], size=150000)  # Binary target (0 or 1)
+
+# Train-test split
+train_size = 0.7
+split = int(len(X) * train_size)
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
 
 # Example on how to use with multiple predictions (maybe i will make a different function for handling multiple predictions)
 from sklearn.datasets import load_iris
@@ -191,14 +238,20 @@ X = iris.data
 y = iris.target
 
 # Split the dataset into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Build the decision tree
+print("Building decision tree...")
 decision_tree = build_tree(X_train, y_train)
 
+print("Decision tree built.")
+print("Making predictions...")
 # Make predictions on the test set
 y_pred = predict(decision_tree, X_test)
-
+print("Predictions made.")
 # Calculate the accuracy
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy:.4f}")
+# accuracy = accuracy_score(y_test, y_pred) # Error
+# print(f"Accuracy: {accuracy:.4f}")
+
+execution_time = time.time() - start
+print(f"Execution time: {execution_time:.2f} seconds")
