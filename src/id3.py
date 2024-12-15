@@ -23,14 +23,15 @@ class Node:
     __init__(self, feature=None, value=None, results=None, true_branch=None, false_branch=None)
         Initializes the Node with the given attributes.
     """
-    def __init__(self, feature=None, value=None, results=None, true_branch=None, false_branch=None):
+    def __init__(self, feature: int = None, value: any = None, results: dict = None, true_branch = None, false_branch = None):
         self.feature = feature  # Feature to split on
         self.value = value      # Value of the feature to split on
         self.results = results  # Stores class labels if node is a leaf node
         self.true_branch = true_branch  # Branch for values that are True for the feature
         self.false_branch = false_branch  # Branch for values that are False for the feature
         
-def entropy(data):
+        
+def entropy(data: np.ndarray) -> float:
     """
     Calculate the entropy of a dataset.
 
@@ -52,7 +53,7 @@ def entropy(data):
     entropy = -np.sum([p * np.log2(p) for p in probabilities if p > 0])
     return entropy
 
-def split_data(X, y, feature, value):
+def split_data(X: np.ndarray, y: np.ndarray, feature: int, value: float) -> tuple:
     """
     Splits the dataset into two subsets based on a feature and a threshold value.
 
@@ -75,9 +76,9 @@ def split_data(X, y, feature, value):
     false_X, false_y = X[false_indices], y[false_indices]
     return true_X, true_y, false_X, false_y
 
-def build_tree(X, y):
+def build_tree(X: np.ndarray, y: np.ndarray) -> Node:
     """
-    Builds a decision tree using the ID3 algorithm.
+    Builds a decision tree using the ID3 algorithm (In sklearn, it called fit() method)
     
     Parameters:
     X (numpy.ndarray): The feature matrix where each row represents an instance and each column represents a feature.
@@ -119,7 +120,7 @@ def build_tree(X, y):
 
     return Node(results=y[0])
 
-def predict(tree, sample):
+def single_instance_predict(tree: Node, sample: dict) -> dict:
     """
     Predicts the class label for a given sample using a decision tree.
 
@@ -137,20 +138,67 @@ def predict(tree, sample):
         branch = tree.false_branch
         if sample[tree.feature] <= tree.value:
             branch = tree.true_branch
-        return predict(branch, sample)
+        return single_instance_predict(branch, sample)
+
+def predict(tree: Node, samples: np.ndarray) -> np.ndarray:
+    """
+    Predicts the class labels for a given set of samples using a decision tree.
+
+    Args:
+        tree (DecisionNode): The root node of the decision tree.
+        samples (numpy.ndarray): The samples to classify, where rows are instances and columns are features.
+
+    Returns:
+        numpy.ndarray: The predicted class labels for the samples.
+    """
+    if samples.ndim == 1:
+        return single_instance_predict(tree, samples)
+    else:
+        return np.array([single_instance_predict(tree, sample) for sample in samples])
     
-# Unit Testing Example
-X = np.array([[1, 1], [1, 0], [0, 1], [0, 0]])
-y = np.array([1, 1, 0, 0])
+# Example on how to use with single prediction
+X = np.array([
+    [2.7, 2.5],
+    [1.3, 3.1],
+    [3.1, 1.8],
+    [3.8, 2.7],
+    [2.5, 2.3],
+    [1.5, 2.8],
+    [3.2, 3.0],
+    [2.0, 1.5],
+    [3.0, 2.0],
+    [2.2, 2.9]
+])
+y = np.array([0, 1, 0, 0, 1, 1, 0, 1, 0, 1])
 
 # Building the tree
 decision_tree = build_tree(X, y)
 
-# Displaying the tree visually
-print("Decision Tree:")
-for i in range(2):
-    print(f"Level {i}:")
-    print(f"Feature: {decision_tree.feature}")
-    print(f"Value: {decision_tree.value}")
-    decision_tree = decision_tree.true_branch
-    
+# Making a prediction
+sample = np.array([1.3, 3.1])
+prediction = predict(decision_tree, sample)
+print(f"Prediction for sample {sample}: {prediction}")
+
+
+# Example on how to use with multiple predictions (maybe i will make a different function for handling multiple predictions)
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+# Load the Iris dataset
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+# Split the dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Build the decision tree
+decision_tree = build_tree(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = predict(decision_tree, X_test)
+
+# Calculate the accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
