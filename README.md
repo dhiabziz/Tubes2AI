@@ -66,13 +66,6 @@ deactivate
 ```
 This will return you to the global Python environment.
 
-### 6. **Tips for Managing Dependencies**
-- **View Installed Packages**:
-  ```bash
-  pip list
-  ```
-- **Manually Edit (Not recommended) `requirements.txt`**: You can open and edit `requirements.txt` to add/remove specific packages.
-- **Avoid Committing `.venv` to Version Control**: Add `.venv` to `.gitignore` to prevent it from being uploaded to Git repositories.
 
 ## **Notes**
 - Always activate the `.venv` before running your Python scripts to ensure the correct dependencies are used.
