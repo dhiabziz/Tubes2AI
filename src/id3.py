@@ -120,7 +120,7 @@ def build_tree(X: np.ndarray, y: np.ndarray) -> Node:
 
     return Node(results=y[0])
 
-def predict(tree: Node, sample: dict) -> dict:
+def single_instance_predict(tree: Node, sample: dict) -> dict:
     """
     Predicts the class label for a given sample using a decision tree.
 
@@ -138,7 +138,23 @@ def predict(tree: Node, sample: dict) -> dict:
         branch = tree.false_branch
         if sample[tree.feature] <= tree.value:
             branch = tree.true_branch
-        return predict(branch, sample)
+        return single_instance_predict(branch, sample)
+
+def predict(tree: Node, samples: np.ndarray) -> np.ndarray:
+    """
+    Predicts the class labels for a given set of samples using a decision tree.
+
+    Args:
+        tree (DecisionNode): The root node of the decision tree.
+        samples (numpy.ndarray): The samples to classify, where rows are instances and columns are features.
+
+    Returns:
+        numpy.ndarray: The predicted class labels for the samples.
+    """
+    if samples.ndim == 1:
+        return single_instance_predict(tree, samples)
+    else:
+        return np.array([single_instance_predict(tree, sample) for sample in samples])
     
 # Example on how to use with single prediction
 X = np.array([
@@ -181,7 +197,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 decision_tree = build_tree(X_train, y_train)
 
 # Make predictions on the test set
-y_pred = [predict(decision_tree, sample) for sample in X_test]
+y_pred = predict(decision_tree, X_test)
 
 # Calculate the accuracy
 accuracy = accuracy_score(y_test, y_pred)
