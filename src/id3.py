@@ -265,62 +265,62 @@ def print_tree(node, depth=0):
         
 # print_tree(dt.tree)
 
-print("Testing with multiple predictions...")
-# Export dataset from ../datasets/numerical-dataset.csv
-import pandas as pd
-from sklearn.model_selection import train_test_split
+# print("Testing with multiple predictions...")
+# # Export dataset from ../datasets/numerical-dataset.csv
+# import pandas as pd
+# from sklearn.model_selection import train_test_split
 
-# Load the dataset
-data = pd.read_csv("src/numerical-dataset.csv")
-X = data.iloc[:, :-1].values
-y = data.iloc[:, -1].values
+# # Load the dataset
+# data = pd.read_csv("src/numerical-dataset.csv")     # Ganti nama file nya
+# X = data.iloc[:, :-1].values
+# y = data.iloc[:, -1].values
 
-start = time.time()
+# start = time.time()
 # np.random.seed(42)
 # X = np.random.randn(150000, 30)  # 150000 samples, 30 features
 # y = np.random.choice([0, 1, 2], size=150000)  # Binary target (0 or 1)
 
 # Train-test split
-train_size = 0.7
-split = int(len(X) * train_size)
-X_train, X_test = X[:split], X[split:]
-y_train, y_test = y[:split], y[split:]
-print(f"len(X_train): {len(X_train)}")
-print(f"len(X_test): {len(X_test)}")
-print(f"len(y_train): {len(y_train)}")
-print(f"len(y_test): {len(y_test)}")
+# train_size = 0.7
+# split = int(len(X) * train_size)
+# X_train, X_test = X[:split], X[split:]
+# y_train, y_test = y[:split], y[split:]
+# print(f"len(X_train): {len(X_train)}")
+# print(f"len(X_test): {len(X_test)}")
+# print(f"len(y_train): {len(y_train)}")
+# print(f"len(y_test): {len(y_test)}")
 
-# Example on how to use with multiple predictions (maybe i will make a different function for handling multiple predictions)
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+# # Example on how to use with multiple predictions (maybe i will make a different function for handling multiple predictions)
+# from sklearn.datasets import load_iris
+# from sklearn.model_selection import train_test_split
+# from sklearn.metrics import accuracy_score
 
-# Load the Iris dataset
-iris = load_iris()
-X = iris.data
-y = iris.target
+# # Load the Iris dataset
+# iris = load_iris()
+# X = iris.data
+# y = iris.target
 
-# Split the dataset into training and test sets
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# # Split the dataset into training and test sets
+# # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Build the decision tree
-print("Building decision tree...")
-dt = DecisionTree()
-dt.build_tree(X_train, y_train)
+# # Build the decision tree
+# print("Building decision tree...")
+# dt = DecisionTree()
+# dt.build_tree(X_train, y_train)
 
-print("Decision tree built.\n")
-print("Making predictions...")
-# Make predictions on the test set
-y_pred = dt.predict_tree(X_test)
-print("Predictions made.")
-# Calculate the accuracy
-print(len(y_test))
-print(len(X_test))
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy:.4f}")
+# print("Decision tree built.\n")
+# print("Making predictions...")
+# # Make predictions on the test set
+# y_pred = dt.predict_tree(X_test)
+# print("Predictions made.")
+# # Calculate the accuracy
+# print(len(y_test))
+# print(len(X_test))
+# accuracy = accuracy_score(y_test, y_pred)
+# print(f"Accuracy: {accuracy:.4f}")
 
-execution_time = time.time() - start
-print(f"Execution time: {execution_time:.2f} seconds\n\nEnd of testing.")
+# execution_time = time.time() - start
+# print(f"Execution time: {execution_time:.2f} seconds\n\nEnd of testing.")
 
-print("Printing the tree...")
-print_tree(dt.tree)
+# print("Printing the tree...")
+# print_tree(dt.tree)
