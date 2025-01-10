@@ -141,6 +141,10 @@ class KNN {
             });
 
             map<T, int> frequency;
+            for (const auto& data : list_data) {
+                frequency[data.get_target()] = 0;
+            }
+            
             for (int i = 0; i < k && i < list_data.size(); i++) {
                 frequency[list_data[i].get_target()]++;
             }
@@ -182,8 +186,8 @@ class KNN {
 // }
 
 int main(int argc, char* argv[]) {
-    if (argc != 5) {
-        cerr << "Usage: " << argv[0] << " <k> <preprocessing_result> <file_test>" << endl;
+    if (argc != 6) {
+        cerr << "Usage: " << argv[0] << " <k> <metrik> <preprocessing_result> <file_test> <function_name>" << endl;
         return 1;
     }
 
@@ -254,21 +258,85 @@ int main(int argc, char* argv[]) {
 
     knn.fit(train_data);
 
-    cout << "Predictions:" << endl;
-    for (const auto& test_features : test_data) {
-        for (auto &&i : test_features)
-        {
-            cout << i << " ";
+    if(string(argv[5]) == "predict"){
+        std::ofstream outFile("predict_knn.txt");
+
+        if (outFile.is_open()) {
+            cout << "Predicted classes: "<< endl;
+            outFile << "Predicted classes: "<< endl;
+            cout << "[";
+            outFile << "[";
+            int i=0;
+            for (const auto& test_features : test_data) {
+                try {
+                    int predicted_class = knn.predict(test_features, metrik);
+                    cout << predicted_class;
+                    outFile << predicted_class;
+                } catch (const invalid_argument& e) {
+                    cerr << e.what() << endl;
+                }
+                i++;
+                if(i!=test_data.size()){
+                    cout << ",";
+                    outFile << ",";
+                }
+            }
+            cout << "]" << endl;
+            outFile << "]" << endl;
+            
+            outFile.close();
+        } else {
+            std::cerr << "Gagal membuka file predict_proba_knn "  << std::endl;
         }
-        cout << endl;
-        
-        try {
-            int predicted_class = knn.predict(test_features, metrik);
-            cout << "Predicted class: " << predicted_class << endl;
-        } catch (const invalid_argument& e) {
-            cerr << e.what() << endl;
-        }
+
     }
+    else if(string(argv[5]) == "predict_proba"){
+        std::ofstream outFile("predict_proba_knn.txt");
+
+        if (outFile.is_open()) {
+            outFile << "Predicted probabilities: " << endl;
+            cout << "Predicted probabilities: " << endl;
+            outFile << "[";
+            cout << "[";
+            int i=0;
+            for (const auto& test_features : test_data) {
+                try {
+                    auto probabilities = knn.predict_proba(test_features, metrik);
+                    int j=0;
+                    cout << "[";
+                    outFile << "[";
+                    for (const auto& prob: probabilities){
+                        cout << " " << prob.second;
+                        outFile << " " << prob.second;
+                        j++;
+                        if(j!=probabilities.size()){
+                            cout << ",";
+                            outFile << ",";
+                        }
+                    }
+                    cout << "]";
+                    outFile << "]";
+                } catch (const invalid_argument& e) {
+                    cerr << e.what() << endl;
+                }
+                i++;
+                if(i!=test_data.size()){
+                    outFile << "," << endl;
+                    cout << "," << endl;
+                }
+            }
+            outFile << "]";
+            cout << "]";
+
+            outFile.close();
+        } else {
+            std::cerr << "Gagal membuka file predict_proba_knn "  << std::endl;
+        }
+
+    } else if (argv[5]=="fit"){
+        knn.fit(train_data);
+    }
+
 
 
     return 0;
