@@ -11,7 +11,7 @@ class ScratchNaiveBayes:
         self.vars: Optional[np.ndarray] = None  # Store variance instead of std for efficiency
         self._fitted = False
 
-    def _validate_input(self, X: Union[np.ndarray, pd.DataFrame], y: np.ndarray):
+    def _validate_input(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]):
         """Validate and preprocess input data."""
         if isinstance(X, pd.DataFrame):
             X = X.to_numpy()
@@ -21,9 +21,16 @@ class ScratchNaiveBayes:
             raise ValueError(f"Found {X.shape[0]} samples in X but {len(y)} in y")
         if not np.isfinite(X).all():
             raise ValueError("X contains non-finite values")
-        return X
+        
+        if isinstance(y, pd.DataFrame):
+            y = np.array(y).ravel()
+        if y.ndim != 1:
+            raise ValueError("y must be a 1D array")
+        if not np.isfinite(y).all():
+            raise ValueError("y contains non-finite values")
+        return X, y
 
-    def fit(self, X: Union[np.ndarray, pd.DataFrame], y: np.ndarray):
+    def fit(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]):
         """
         Fit the Gaussian Naive Bayes model using vectorized operations.
         
@@ -34,7 +41,7 @@ class ScratchNaiveBayes:
         Returns:
             self: Returns the instance itself
         """
-        X = self._validate_input(X, y)
+        X, y = self._validate_input(X, y)
         
         # Compute class-related statistics
         self.classes = np.unique(y)
@@ -107,7 +114,7 @@ class ScratchNaiveBayes:
         """
         return self.classes[np.argmax(self.predict_proba(X), axis=1)]
 
-    def score(self, X: Union[np.ndarray, pd.DataFrame], y: np.ndarray):
+    def score(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.DataFrame]):
         """
         Compute accuracy score.
         
