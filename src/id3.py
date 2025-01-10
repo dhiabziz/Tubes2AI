@@ -1,6 +1,8 @@
 from collections import Counter
 import time
+from typing import Union
 import numpy as np
+import pandas as pd
 
 def print_tree(node, depth=0):
     if node.results is not None:
@@ -118,7 +120,7 @@ class DecisionTree:
         false_X, false_y = X[false_indices], y[false_indices]
         return true_X, true_y, false_X, false_y
 
-    def fit(self, X: np.ndarray, y: np.ndarray, max_depth: int = 15, min_samples_split: int = 2) -> Node:
+    def fit(self, X: Union[np.ndarray, pd.DataFrame] , y: Union[np.ndarray, pd.DataFrame], max_depth: int = 15, min_samples_split: int = 2) -> Node:
         """
         This function builds the optimized decision tree using the ID3 algorithm.
         
@@ -131,22 +133,26 @@ class DecisionTree:
         Returns:
         Node: The root node of the constructed decision tree.
         """
+        # Convert pandas DataFrame to numpy array
+        X_numpy = X.to_numpy() if isinstance(X, pd.DataFrame) else X
+        y_numpy = y.to_numpy() if isinstance(y, pd.DataFrame) else y
+        
         # Early stopping conditions
-        if (len(set(y)) == 1 or  # All samples have the same class
+        if (len(set(y_numpy)) == 1 or  # All samples have the same class
             max_depth == 0 or    # Maximum depth reached
-            len(y) < min_samples_split):  # Not enough samples to split
+            len(y_numpy) < min_samples_split):  # Not enough samples to split
             # Return the most frequent class
-            unique, counts = np.unique(y, return_counts=True)
+            unique, counts = np.unique(y_numpy, return_counts=True)
             return Node(results=unique[np.argmax(counts)])
 
         # Calculate current entropy
-        current_entropy = self.entropy(y)
+        current_entropy = self.entropy(y_numpy)
 
         # Track best split
         best_gain = 0
         best_criteria = None
         best_sets = None
-        n_features = X.shape[1]
+        n_features = X_numpy.shape[1]
         
         # print(f"n_features: {n_features}")
 
@@ -155,7 +161,7 @@ class DecisionTree:
 
         for feature in feature_subset:
             # Use percentiles for feature values to reduce computational complexity
-            feature_values = np.percentile(X[:, feature], [25, 50, 75])
+            feature_values = np.percentile(X_numpy[:, feature], [25, 50, 75])
             # print(f"feature_values: {feature_values}")
             # print(f"feature: {feature}")
             # print(f"X[:, feature]: {X[:, feature]}")
@@ -165,7 +171,7 @@ class DecisionTree:
             
             for value in feature_values:
                 # Split data
-                true_X, true_y, false_X, false_y = self.split_data(X, y, feature, value)
+                true_X, true_y, false_X, false_y = self.split_data(X_numpy, y_numpy, feature, value)
                 
                 # Skip if split is too small
                 if (len(true_y) < min_samples_split or 
@@ -177,7 +183,7 @@ class DecisionTree:
                 false_entropy = self.entropy(false_y)
                 
                 # Calculate information gain
-                p = len(true_y) / len(y)
+                p = len(true_y) / len(y_numpy)
                 gain = current_entropy - p * true_entropy - (1 - p) * false_entropy
 
                 # Update best split if gain is improved
@@ -188,7 +194,7 @@ class DecisionTree:
 
         # If no good split found, return most frequent class
         if best_gain <= 0:
-            unique, counts = np.unique(y, return_counts=True)
+            unique, counts = np.unique(y_numpy, return_counts=True)
             return Node(results=unique[np.argmax(counts)])
 
         # Recursively build branches with reduced depth
@@ -219,7 +225,7 @@ class DecisionTree:
                 branch = tree.true_branch
             return self.single_instance_predict(branch, sample)
 
-    def predict(self, samples: np.ndarray) -> np.ndarray:
+    def predict(self, samples: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         """
         Predicts the class labels for a given set of samples using a decision tree.
 
@@ -230,12 +236,15 @@ class DecisionTree:
         Returns:
             numpy.ndarray: The predicted class labels for the samples.
         """
+        # Convert pandas DataFrame to numpy array
+        samples_numpy = samples.to_numpy() if isinstance(samples, pd.DataFrame) else samples
+        
         if self.tree is None:
             raise ValueError("Decision tree has not been built. Call the `build_tree` method first.")
-        if samples.ndim == 1:
-            return self.single_instance_predict(self.tree, samples)
+        if samples_numpy.ndim == 1:
+            return self.single_instance_predict(self.tree, samples_numpy)
         else:
-            return np.array([self.single_instance_predict(self.tree, sample) for sample in samples])
+            return np.array([self.single_instance_predict(self.tree, sample) for sample in samples_numpy])
     
 # # Example on how to use with single prediction
 # print("Testing with single prediction...")
