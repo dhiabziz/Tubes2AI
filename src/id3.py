@@ -2,6 +2,15 @@ from collections import Counter
 import time
 import numpy as np
 
+def print_tree(node, depth=0):
+    if node.results is not None:
+        print(f"{depth * '  '}Class: {node.results}")
+    else:
+        print(f"{depth * '  '}{node.feature} <= {node.value}")
+        print_tree(node.true_branch, depth + 1)
+        print_tree(node.false_branch, depth + 1)
+        
+        
 class Node:
     """
     A class used to represent a node in a decision tree.
@@ -109,9 +118,9 @@ class DecisionTree:
         false_X, false_y = X[false_indices], y[false_indices]
         return true_X, true_y, false_X, false_y
 
-    def build_tree(self, X: np.ndarray, y: np.ndarray, max_depth: int = 15, min_samples_split: int = 2) -> Node:
+    def fit(self, X: np.ndarray, y: np.ndarray, max_depth: int = 15, min_samples_split: int = 2) -> Node:
         """
-        Optimized decision tree construction using ID3 algorithm.
+        This function builds the optimized decision tree using the ID3 algorithm.
         
         Parameters:
         X (numpy.ndarray): The feature matrix.
@@ -183,8 +192,8 @@ class DecisionTree:
             return Node(results=unique[np.argmax(counts)])
 
         # Recursively build branches with reduced depth
-        true_branch = self.build_tree(best_sets[0], best_sets[1], max_depth - 1, min_samples_split)
-        false_branch = self.build_tree(best_sets[2], best_sets[3], max_depth - 1, min_samples_split)
+        true_branch = self.fit(best_sets[0], best_sets[1], max_depth - 1, min_samples_split)
+        false_branch = self.fit(best_sets[2], best_sets[3], max_depth - 1, min_samples_split)
             
         self.tree = Node(feature=best_criteria[0], value=best_criteria[1], true_branch=true_branch, false_branch=false_branch)
         
@@ -210,7 +219,7 @@ class DecisionTree:
                 branch = tree.true_branch
             return self.single_instance_predict(branch, sample)
 
-    def predict_tree(self, samples: np.ndarray) -> np.ndarray:
+    def predict(self, samples: np.ndarray) -> np.ndarray:
         """
         Predicts the class labels for a given set of samples using a decision tree.
 
@@ -246,23 +255,15 @@ class DecisionTree:
 
 # # Building the tree
 # dt = DecisionTree()
-# dt.build_tree(X, y)
+# dt.fit(X, y)
 
 # # Making predictions
 # sample = np.array([2.7, 2.5])
-# prediction = dt.predict_tree(sample)
+# prediction = dt.predict(sample)
 # print(f"Prediction for sample {sample}: {prediction}\n\n")
 
-# Print the tree
+# # Print the tree
 # print("Printing the tree...")
-def print_tree(node, depth=0):
-    if node.results is not None:
-        print(f"{depth * '  '}Class: {node.results}")
-    else:
-        print(f"{depth * '  '}{node.feature} <= {node.value}")
-        print_tree(node.true_branch, depth + 1)
-        print_tree(node.false_branch, depth + 1)
-        
 # print_tree(dt.tree)
 
 # print("Testing with multiple predictions...")
@@ -280,7 +281,7 @@ def print_tree(node, depth=0):
 # X = np.random.randn(150000, 30)  # 150000 samples, 30 features
 # y = np.random.choice([0, 1, 2], size=150000)  # Binary target (0 or 1)
 
-# Train-test split
+# # Train-test split
 # train_size = 0.7
 # split = int(len(X) * train_size)
 # X_train, X_test = X[:split], X[split:]
@@ -306,12 +307,12 @@ def print_tree(node, depth=0):
 # # Build the decision tree
 # print("Building decision tree...")
 # dt = DecisionTree()
-# dt.build_tree(X_train, y_train)
+# dt.fit(X_train, y_train)
 
 # print("Decision tree built.\n")
 # print("Making predictions...")
 # # Make predictions on the test set
-# y_pred = dt.predict_tree(X_test)
+# y_pred = dt.predict(X_test)
 # print("Predictions made.")
 # # Calculate the accuracy
 # print(len(y_test))
