@@ -137,12 +137,19 @@ class DecisionTree:
         X_numpy = X.to_numpy() if isinstance(X, pd.DataFrame) else X
         y_numpy = y.to_numpy() if isinstance(y, pd.DataFrame) else y
         
+        y_numpy = y_numpy.ravel()
+        
+        # Check if the y_numpy is 1D vector
+        if y_numpy.ndim > 1:
+            raise ValueError("Target vector y must be 1D array-like object.")
+        
         # Early stopping conditions
         if (len(set(y_numpy)) == 1 or  # All samples have the same class
             max_depth == 0 or    # Maximum depth reached
             len(y_numpy) < min_samples_split):  # Not enough samples to split
             # Return the most frequent class
             unique, counts = np.unique(y_numpy, return_counts=True)
+            self.tree = Node(results=unique[np.argmax(counts)])
             return Node(results=unique[np.argmax(counts)])
 
         # Calculate current entropy
@@ -195,6 +202,7 @@ class DecisionTree:
         # If no good split found, return most frequent class
         if best_gain <= 0:
             unique, counts = np.unique(y_numpy, return_counts=True)
+            self.tree = Node(results=unique[np.argmax(counts)])
             return Node(results=unique[np.argmax(counts)])
 
         # Recursively build branches with reduced depth
