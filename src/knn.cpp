@@ -209,9 +209,10 @@ int main(int argc, char* argv[]) {
     vector<Data<int>> train_data;
     vector<vector<double>> test_data;
     string line;
+    string header;
 
     // string header;
-    // getline(inputFile1, header); // Skip header
+    getline(inputFile1, header); // Skip header
     // Membaca train data
     while (getline(inputFile1, line)) {
 
@@ -235,7 +236,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Membaca test data
-    // getline(inputFile2, header); // Skip header
+    getline(inputFile2, header); // Skip header
     while (getline(inputFile2, line)) {
         
         stringstream ss(line);
